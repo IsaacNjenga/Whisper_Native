@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { createContext, useContext, useEffect, useState } from "react";
 
@@ -10,6 +11,7 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
+  const router = useRouter();
   const [authState, setAuthState] = useState({
     token: null,
     authenticated: null,

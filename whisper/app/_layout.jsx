@@ -23,14 +23,17 @@ const InitialLayout = () => {
 
     const inAuthGroup = segments[0] === "(inside)";
 
-    if (authState?.authenticated && inAuthGroup) {
-      router.replace("(inside)");
-    } else if (!authState?.authenticated) {
-      //client.disconnectUser();
-      console.log('Not authenticated!')
+    if (authState?.authenticated && !inAuthGroup) {
+      console.log("User authenticated!");
+      router.replace("/(inside)");
+    } else if (!authState?.authenticated && inAuthGroup) {
+      console.log("Not authenticated!");
+      client
+        ?.disconnectUser?.()
+        .catch((e) => console.log("Error disconnecting Stream client:", e));
       router.replace("/");
     }
-  }, [authState, initialized]);
+  }, [authState, initialized, segments, client]);
 
   useEffect(() => {
     if (authState?.authenticated && authState.token) {
@@ -42,7 +45,7 @@ const InitialLayout = () => {
           user,
           token: authState.token,
         });
-        console.log('Client created!')
+        console.log("Client created!");
         setClient(client);
       } catch (error) {
         console.log("Error creating client", error);
