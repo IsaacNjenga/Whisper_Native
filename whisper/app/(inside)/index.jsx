@@ -119,6 +119,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginRight: 10,
+    lineHeight: 20,
   },
   divider: {
     flexDirection: "row",
@@ -149,5 +150,6 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: "bold",
     textAlign: "center",
+    lineHeight: 50,
   },
 });
