@@ -21,10 +21,6 @@
         "android.permission.BLUETOOTH",
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.BLUETOOTH_ADMIN",
-        "android.permission.WAKE_LOCK",
-        "android.permission.BLUETOOTH",
-        "android.permission.BLUETOOTH_CONNECT",
-        "android.permission.BLUETOOTH_ADMIN",
         "android.permission.WAKE_LOCK"
       ],
       "package": "com.isaac_njenga.whisper"
@@ -69,6 +65,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "96d84517-2ae8-49b7-b0e8-b334c93586d5"
+      }
     }
   }
 }
