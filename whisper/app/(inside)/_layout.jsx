@@ -12,6 +12,7 @@ const Layout = () => {
       screenOptions={{
         headerStyle: { backgroundColor: "#0333c1" },
         headerTintColor: "#fff",
+        
       }}
     >
       <Stack.Screen
@@ -19,7 +20,7 @@ const Layout = () => {
         options={{
           title: "Meeting Room",
           headerRight: () => (
-            <TouchableOpacity onPress={() => onLogout()}>
+            <TouchableOpacity onPress={onLogout}>
               <Ionicons name="log-out-outline" size={28} color={"white"} />
             </TouchableOpacity>
           ),
