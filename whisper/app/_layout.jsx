@@ -21,26 +21,26 @@ const InitialLayout = () => {
   useEffect(() => {
     if (!initialized) return;
 
+    // Check if the path/url is in the (inside) group
     const inAuthGroup = segments[0] === "(inside)";
 
     if (authState?.authenticated && !inAuthGroup) {
-      console.log("User authenticated!");
+      // Redirect authenticated users to the list page
       router.replace("/(inside)");
-    } else if (!authState?.authenticated && inAuthGroup) {
-      console.log("Not authenticated!");
-      client
-        ?.disconnectUser?.()
-        .catch((e) => console.log("Error disconnecting Stream client:", e));
+    } else if (!authState?.authenticated) {
+      // Redirect unauthenticated users to the login page
+      client?.disconnectUser();
       router.replace("/");
     }
-  }, [authState, initialized, segments, client]);
+  }, [initialized, authState]);
 
+  // Initialize the StreamVideoClient when the user is authenticated
   useEffect(() => {
     if (authState?.authenticated && authState.token) {
       console.log("Creating client...");
       const user = authState.user_id;
       try {
-        const client = new StreamVideoClient({
+        const client = new StreamVideoClient.getOrCreateInstance({
           apiKey: STREAM_KEY,
           user,
           token: authState.token,

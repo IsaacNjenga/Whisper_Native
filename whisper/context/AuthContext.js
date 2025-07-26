@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { createContext, useContext, useEffect, useState } from "react";
 
@@ -11,7 +10,6 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const router = useRouter();
   const [authState, setAuthState] = useState({
     token: null,
     authenticated: null,
@@ -92,6 +90,7 @@ export const AuthProvider = ({ children }) => {
 
     //reset auth state
     setAuthState({ token: null, authenticated: null, user_id: null });
+    console.log("logged out!");
   };
 
   const value = {

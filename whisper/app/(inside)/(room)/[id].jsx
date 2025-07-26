@@ -13,26 +13,43 @@ const Page = () => {
   const [call, setCall] = useState(null);
   const { id } = useLocalSearchParams();
 
+  console.log(id);
+
   useEffect(() => {
-    if (!client || call) return;
+    if (!client) {
+      console.log("Client not ready yet");
+      return;
+    }
+    if (call) return;
     const joinCall = async () => {
-      console.log("Joining call...", id);
-      const call = client.call("default", id);
-      await call.join({ create: true });
-      setCall(call);
+      try {
+        console.log("Joining call...", id);
+        const call = client.call("default", id);
+        await call.join({ create: true });
+        console.log("Joined call!");
+        setCall(call);
+      } catch (error) {
+        console.error("Failed to join call:", error);
+      }
     };
+
     joinCall();
-  }, [client]);
+  }, [client, id]);
+
+  // if (!client || !id) return <Spinner visible textContent="Initializing..." />;
+  // if (!call) return <Spinner visible textContent="Joining call..." />;
 
   if (!call) return null;
 
   return (
-    <View style={{ flex: 1 }}>
-      <Spinner visible={!call} />
-      <StreamCall call={call}>
-        <CallContent />
-      </StreamCall>
-    </View>
+    <>
+      <View style={{ flex: 1 }}>
+        <Spinner visible={!call} />
+        <StreamCall call={call}>
+          <CallContent />
+        </StreamCall>
+      </View>
+    </>
   );
 };
 
