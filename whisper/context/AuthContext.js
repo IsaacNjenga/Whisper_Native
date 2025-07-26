@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
       const json = await result.json();
       //set the context state
       setAuthState({
-        token: json.token,
+        token: json.stream_token,
         authenticated: true,
         user_id: json.user._id,
       });
@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }) => {
       const json = await result.json();
       //set the context state
       setAuthState({
-        token: json.token,
+        token: json.stream_token,
         authenticated: true,
         user_id: json.user._id,
       });

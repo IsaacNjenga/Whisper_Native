@@ -31,7 +31,7 @@ export default function Index() {
     setLoading(true);
     try {
       const result = await onRegister(username, email, password);
-      console.log("🚀 ~ onSignUp ~ result:", result);
+      //console.log("🚀 ~ onSignUp ~ result:", result);
     } catch (error) {
       Alert.alert("Error", `Could not sign up. Try again.`);
     } finally {
@@ -42,7 +42,7 @@ export default function Index() {
     setLoading(true);
     try {
       const result = await onLogin(email, password);
-      console.log("🚀 ~ onSignIn ~ result:", result);
+      //console.log("🚀 ~ onSignIn ~ result:", result);
     } catch (error) {
       Alert.alert("Error", `Could not sign in. Try again.`);
     } finally {
