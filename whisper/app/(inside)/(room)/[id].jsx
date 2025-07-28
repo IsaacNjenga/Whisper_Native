@@ -4,6 +4,7 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
+  Share,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -18,7 +19,6 @@ import CustomBottomSheet from "@/components/CustomBottomSheet";
 import CustomTopView from "@/components/CustomTopView";
 import CustomCallControls from "@/components/CustomCallControl";
 import { Ionicons } from "@expo/vector-icons";
-import { Share } from "stream-chat-expo";
 import Toast from "react-native-toast-message";
 
 const WIDTH = Dimensions.get("window").width;

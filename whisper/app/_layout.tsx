@@ -29,7 +29,7 @@ const InitialLayout = () => {
     if (authState?.authenticated && !inAuthGroup) {
       console.log("taking user to inside");
       // Redirect authenticated users to the list page
-      router.replace("/inside");
+      router.replace("/(inside)");
     } else if (!authState?.authenticated && inAuthGroup) {
       // Redirect unauthenticated users to the login page
       console.log("user not authenticated");
