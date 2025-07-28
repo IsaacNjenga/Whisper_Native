@@ -1,4 +1,4 @@
-import { View, Text } from "react-native";
+import { View, Text, StyleSheet, Dimensions } from "react-native";
 import React, { useEffect, useState } from "react";
 import {
   CallContent,
@@ -6,12 +6,17 @@ import {
   useStreamVideoClient,
 } from "@stream-io/video-react-native-sdk";
 import Spinner from "react-native-loading-spinner-overlay";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import ChatView from "@/components/ChatView";
+
+const WIDTH = Dimensions.get("window").width;
+const HEIGHT = Dimensions.get("window").height;
 
 const Page = () => {
   const client = useStreamVideoClient();
   const [call, setCall] = useState(null);
   const { id } = useLocalSearchParams();
+  const router = useRouter();
 
   console.log(id);
 
@@ -36,6 +41,10 @@ const Page = () => {
     joinCall();
   }, [client, id]);
 
+  const goToHomeScreen = async () => {
+    router.back();
+  };
+
   // if (!client || !id) return <Spinner visible textContent="Initializing..." />;
   // if (!call) return <Spinner visible textContent="Joining call..." />;
 
@@ -46,7 +55,12 @@ const Page = () => {
       <View style={{ flex: 1 }}>
         <Spinner visible={!call} />
         <StreamCall call={call}>
-          <CallContent />
+          <View style={styles.container}>
+            <CallContent onHangupCallHandler={goToHomeScreen} />
+            <View style={styles.chatContainer}>
+              <ChatView channelId={id} />
+            </View>
+          </View>
         </StreamCall>
       </View>
     </>
@@ -54,3 +68,13 @@ const Page = () => {
 };
 
 export default Page;
+
+const styles = StyleSheet.create({
+  container: { flex: 1, flexDirection: WIDTH > HEIGHT ? "row" : "column" },
+  chatContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+    textAlign: "center",
+    justifyContent: "center",
+  },
+});
