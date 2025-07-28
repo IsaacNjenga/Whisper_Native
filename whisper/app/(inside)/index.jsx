@@ -19,6 +19,7 @@ const HEIGHT = Dimensions.get("window").height;
 
 const Page = () => {
   const router = useRouter();
+  
   const onStartMeeting = async () => {
     const randomId = Math.random().toString(36).substring(2, 10);
     router.push(`/(inside)/(room)/${randomId}`);

@@ -1,8 +1,7 @@
 import { View, Text } from "react-native";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { StreamChat } from "stream-chat";
 import { useAuth } from "@/context/AuthContext";
-import { Channel as ChannelType } from "stream-chat";
 import { Channel, Chat, MessageInput, MessageList } from "stream-chat-expo";
 
 const STREAM_KEY = process.env.EXPO_PUBLIC_STREAM_ACCESS_KEY;
@@ -33,7 +32,6 @@ const ChatView = ({ channelId }) => {
 
   return (
     <View>
-      <Text>ChatView</Text>
       {chatClient && channel ? (
         <Chat client={chatClient}>
           <Channel channel={channel}>

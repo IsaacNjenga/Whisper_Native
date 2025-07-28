@@ -59,35 +59,41 @@ export default function Index() {
         <View style={styles.innerContainer}>
           <Spinner visible={loading} />
           <Text style={styles.header}>Whisper</Text>
-          <Text style={styles.subHeader}>Connect. Anywhere. Anytime</Text>
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine}></View>
+            <Text style={styles.subHeader}>Connect. Anywhere. Anytime</Text>
+            <View style={styles.dividerLine}></View>
+          </View>
+
           <View style={styles.formView}>
-            <Text>Username</Text>
+            <Text style={styles.formLabel}>Username</Text>
             <TextInput
               autoCapitalize="none"
               placeholder="E.g. John Doe"
-              placeholderTextColor="purple"
+              placeholderTextColor="gray"
               value={username}
               onChangeText={setUsername}
               style={styles.inputField}
             />{" "}
           </View>
           <View style={styles.formView}>
-            <Text>Email Address</Text>
+            <Text style={styles.formLabel}>Email Address</Text>
             <TextInput
               autoCapitalize="none"
               placeholder="johndoe@email.com"
-              placeholderTextColor="purple"
+              placeholderTextColor="gray"
               value={email}
               onChangeText={setEmail}
               style={styles.inputField}
             />
           </View>
           <View style={styles.formView}>
-            <Text>Password</Text>
+            <Text style={styles.formLabel}>Password</Text>
             <TextInput
               autoCapitalize="none"
               placeholder="●●●●●●●●●"
-              placeholderTextColor="purple"
+              placeholderTextColor="gray"
               secureTextEntry
               value={password}
               onChangeText={setPassword}
@@ -119,24 +125,31 @@ const styles = StyleSheet.create({
   innerContainer: {
     padding: 18,
     margin: 10,
-    backgroundColor: "rgba(238, 230, 230, 0.78)",
+    backgroundColor: "rgba(238, 230, 230, 0.88)",
     borderRadius: 30,
   },
   header: {
-    marginTop:10,
-    fontSize: 49,
+    marginTop: 10,
+    fontSize: 51,
     textAlign: "center",
     marginBottom: 10,
     letterSpacing: 5,
     fontWeight: 800,
     lineHeight: 50,
+    backgroundColor: Colors.primary,
+    padding: 10,
+    borderRadius: 15,
+    color: "white",
+    marginHorizontal: 60,
   },
   subHeader: {
-    fontSize: 18,
+    fontSize: 20,
     textAlign: "center",
-    marginBottom: 40,
+    marginBottom: 0,
     fontWeight: 500,
+    color: Colors.primary,
   },
+  formLabel: { fontSize: 15, color: Colors.primary },
   inputField: {
     marginVertical: 4,
     height: 50,
@@ -167,4 +180,13 @@ const styles = StyleSheet.create({
     resizeMode: "cover",
     justifyContent: "center",
   },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 10,
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  dividerLine: { flex: 1, height: 2, backgroundColor: Colors.primary },
 });

@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { createContext, useContext, useEffect, useState } from "react";
 
@@ -16,6 +17,7 @@ export const AuthProvider = ({ children }) => {
     user_id: null,
   });
   const [initialized, setInitialized] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const loadToken = async () => {
@@ -68,6 +70,7 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ email, password }),
       });
       const json = await result.json();
+
       //set the context state
       setAuthState({
         token: json.stream_token,
@@ -91,6 +94,8 @@ export const AuthProvider = ({ children }) => {
     //reset auth state
     setAuthState({ token: null, authenticated: null, user_id: null });
     console.log("logged out!");
+
+    router.replace("/");
   };
 
   const value = {

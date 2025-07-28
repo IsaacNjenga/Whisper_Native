@@ -29,11 +29,6 @@ const Layout = () => {
         name="(room)/[id]"
         options={{
           title: "Room",
-          headerRight: () => (
-            <TouchableOpacity onPress={onLogout}>
-              <Ionicons name="log-out-outline" size={28} color={"white"} />
-            </TouchableOpacity>
-          ),
         }}
       />
     </Stack>

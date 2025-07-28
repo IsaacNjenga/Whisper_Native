@@ -27,10 +27,10 @@ const InitialLayout = () => {
     const inAuthGroup = segments[0] === "(inside)";
 
     if (authState?.authenticated && !inAuthGroup) {
+      console.log("taking user to inside");
       // Redirect authenticated users to the list page
-      console.log("authenticated");
       router.replace("/inside");
-    } else if (!authState?.authenticated) {
+    } else if (!authState?.authenticated && inAuthGroup) {
       // Redirect unauthenticated users to the login page
       console.log("user not authenticated");
       client?.disconnectUser();
@@ -44,7 +44,7 @@ const InitialLayout = () => {
       const user: User = { id: authState.user_id! };
 
       try {
-        const client = new StreamVideoClient({
+        const client = StreamVideoClient.getOrCreateInstance({
           apiKey: STREAM_KEY!,
           user,
           token: authState.token,
@@ -58,21 +58,21 @@ const InitialLayout = () => {
 
   // Conditionally render the correct layout
   return (
-    <>
+    <React.Fragment>
       {!client && (
         <Stack>
           <Stack.Screen name="index" options={{ headerShown: false }} />
         </Stack>
       )}
       {client && (
-        <StreamVideo client={client}>
+        <StreamVideo client={client!}>
           <OverlayProvider>
             <Slot />
             <Toast />
           </OverlayProvider>
         </StreamVideo>
       )}
-    </>
+    </React.Fragment>
   );
 };
 
