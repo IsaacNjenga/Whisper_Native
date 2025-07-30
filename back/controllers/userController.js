@@ -1,11 +1,29 @@
 import { StreamChat } from "stream-chat";
-import UserModel from "../models/User.js";
 import cloudinary from "../config/cloudinary.js";
+import UserModel from "../models/User.js";
 
 const api_key = process.env.STREAM_API_KEY;
 const api_secret = process.env.STREAM_API_SECRET;
 
 const client = StreamChat.getInstance(api_key, api_secret);
+
+const fetchUsers = async (req, res) => {
+  try {
+    const users = await UserModel.find({}).select(
+      "_id username email avatar createdAt"
+    );
+
+    if (!users || users.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No users found" });
+    }
+    return res.status(200).json({ success: true, users });
+  } catch (error) {
+    console.log("Error on fetching users", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
 
 const fetchUser = async (req, res) => {
   const { id } = req.query;
@@ -68,7 +86,7 @@ const updateUser = async (req, res) => {
   }
 };
 
-const changeAvatar = async (req,res) => {
+const changeAvatar = async (req, res) => {
   const { image } = req.body;
   const { id } = req.query;
   if (!id) return res.status(404).json({ message: "No ID specified" });
@@ -108,7 +126,7 @@ const changeAvatar = async (req,res) => {
   }
 };
 
-const deleteAvatar = async (req,res) => {
+const deleteAvatar = async (req, res) => {
   const { id } = req.query;
   if (!id) return res.status(404).json({ message: "No ID specified" });
   try {
@@ -163,4 +181,11 @@ const deleteUser = async (req, res) => {
   }
 };
 
-export { fetchUser, deleteUser, updateUser, changeAvatar, deleteAvatar };
+export {
+  changeAvatar,
+  deleteAvatar,
+  deleteUser,
+  fetchUser,
+  fetchUsers,
+  updateUser,
+};

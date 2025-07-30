@@ -1,11 +1,12 @@
 import express from "express";
-import { Register, Login } from "../controllers/authController.js";
+import { Login, Register } from "../controllers/authController.js";
 import {
-  updateUser,
-  fetchUser,
-  deleteUser,
   changeAvatar,
   deleteAvatar,
+  deleteUser,
+  fetchUser,
+  fetchUsers,
+  updateUser,
 } from "../controllers/userController.js";
 
 const router = express.Router();
@@ -15,6 +16,7 @@ router.post("/sign-up", Register);
 router.post("/sign-in", Login);
 
 //user routes
+router.get("/fetch-users", fetchUsers);
 router.put("/update-user", updateUser);
 router.get("/fetch-user", fetchUser);
 router.delete("/delete-user", deleteUser);
