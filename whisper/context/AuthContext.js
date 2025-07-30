@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
 
       return result;
     } catch (error) {
-      console.log("Login error:", error);
+      console.log("Registration error:", error);
     }
   };
 

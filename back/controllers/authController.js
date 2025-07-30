@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
-import UserModel from "../models/User.js";
 import { StreamChat } from "stream-chat";
+import UserModel from "../models/User.js";
 
 dotenv.config();
 
@@ -26,22 +26,22 @@ const Register = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
     if (password.length < 12) {
-      return res
-        .status(400)
-        .json({ message: "Password must be at least 12 characters long" });
+      return res.status(400).json({
+        message: { password: "Password must be at least 12 characters long" },
+      });
     }
 
     const existingEmail = await UserModel.findOne({ email });
     if (existingEmail) {
       return res
         .status(400)
-        .json({ message: "User under this email already exists" });
+        .json({ message: { email: "User under this email already exists" } });
     }
     const existingUsername = await UserModel.findOne({ username });
     if (existingUsername) {
-      return res
-        .status(400)
-        .json({ message: "User under this username already exists" });
+      return res.status(400).json({
+        message: { username: "User under this username already exists" },
+      });
     }
 
     //random avatar generation logic
@@ -84,12 +84,16 @@ const Login = async (req, res) => {
     }
     const user = await UserModel.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "Credentials are invalid" });
+      return res
+        .status(400)
+        .json({ message: { email: "Credentials are invalid" } });
     }
 
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      return res.status(400).json({ message: "Credentials are invalid" });
+      return res
+        .status(400)
+        .json({ message: { password: "Credentials are invalid" } });
     }
 
     const token = await generateStreamToken(user._id);
@@ -111,4 +115,4 @@ const Login = async (req, res) => {
   }
 };
 
-export { Register, Login };
+export { Login, Register };
