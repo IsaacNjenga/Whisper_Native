@@ -45,7 +45,7 @@ const Register = async (req, res) => {
     }
 
     //random avatar generation logic
-    const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+    const avatar = `https://api.dicebear.com/7.x/avataaars/png?seed=${username}`;
 
     const newUser = new UserModel({ ...req.body, avatar });
     await newUser.save();

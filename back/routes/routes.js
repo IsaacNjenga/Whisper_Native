@@ -4,6 +4,8 @@ import {
   updateUser,
   fetchUser,
   deleteUser,
+  changeAvatar,
+  deleteAvatar,
 } from "../controllers/userController.js";
 
 const router = express.Router();
@@ -16,5 +18,7 @@ router.post("/sign-in", Login);
 router.put("/update-user", updateUser);
 router.get("/fetch-user", fetchUser);
 router.delete("/delete-user", deleteUser);
+router.put("/update-avatar", changeAvatar);
+router.delete("/delete-avatar", deleteAvatar);
 
 export { router as Router };

@@ -1,5 +1,6 @@
 import { StreamChat } from "stream-chat";
 import UserModel from "../models/User.js";
+import cloudinary from "../config/cloudinary.js";
 
 const api_key = process.env.STREAM_API_KEY;
 const api_secret = process.env.STREAM_API_SECRET;
@@ -67,6 +68,82 @@ const updateUser = async (req, res) => {
   }
 };
 
+const changeAvatar = async (req,res) => {
+  const { image } = req.body;
+  const { id } = req.query;
+  if (!id) return res.status(404).json({ message: "No ID specified" });
+  if (!image) return res.status(400).json({ message: "No image provided" });
+
+  try {
+    const uploadedResponse = await cloudinary.uploader.upload(image);
+    const imageUrl = uploadedResponse.secure_url;
+
+    if (!uploadedResponse) {
+      return res.status(500).json({ message: "Image upload failed" });
+    }
+
+    const user = await UserModel.findByIdAndUpdate(
+      { _id: id },
+      { $set: { avatar: imageUrl } },
+      { new: true }
+    );
+
+    await client.upsertUser({
+      id,
+      email: user.email,
+      image: imageUrl,
+    });
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        _id: user._id,
+        avatar: user.avatar,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.log("Error on avatar change", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+const deleteAvatar = async (req,res) => {
+  const { id } = req.query;
+  if (!id) return res.status(404).json({ message: "No ID specified" });
+  try {
+    const user = await UserModel.findByIdAndUpdate(
+      { _id: id },
+      { $set: { avatar: null } },
+      { new: true }
+    );
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    await client.upsertUser({
+      id,
+      email: user.email,
+      image: null,
+    });
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        _id: user._id,
+        avatar: user.avatar,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.log("Error on avatar delete", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 const deleteUser = async (req, res) => {
   const { id } = req.query;
   if (!id) return res.status(404).json({ message: "No ID specified" });
@@ -86,4 +163,4 @@ const deleteUser = async (req, res) => {
   }
 };
 
-export { fetchUser, deleteUser, updateUser };
+export { fetchUser, deleteUser, updateUser, changeAvatar, deleteAvatar };
