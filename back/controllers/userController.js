@@ -36,10 +36,7 @@ const fetchUser = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
-    const { _id, email, avatar } = user;
-    return res
-      .status(200)
-      .json({ success: true, userDetails: { _id, email, avatar } });
+    return res.status(200).json({ success: true, userDetails: user });
   } catch (error) {
     console.log("Error on user fetch", error);
     return res.status(500).json({ success: false, error: error.message });
