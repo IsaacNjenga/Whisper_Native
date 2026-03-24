@@ -1,5 +1,4 @@
 import UserModel from "../User.js";
-import { connectDB } from "../../config/db.js";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import { StreamChat } from "stream-chat";
@@ -24,7 +23,6 @@ const generateTokens = (user) => {
 };
 
 const Register = async (req, res) => {
-  await connectDB();
   try {
     const { email, username, password } = req.body;
     if (!email || !username || !password) {
@@ -58,7 +56,7 @@ const Register = async (req, res) => {
 
     const serverClient = StreamChat.getInstance(api_key, api_secret);
 
-    console.log(serverClient)
+    console.log(serverClient);
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -89,7 +87,6 @@ const Register = async (req, res) => {
 };
 
 const Login = async (req, res) => {
-  await connectDB();
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -158,7 +155,6 @@ const checkUserExists = async (req, res) => {
 };
 
 const refreshMyToken = async (req, res) => {
-  await connectDB();
   const { refreshToken } = req.body;
   if (!refreshToken)
     return res
