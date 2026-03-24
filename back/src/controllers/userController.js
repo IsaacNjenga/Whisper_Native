@@ -1,6 +1,6 @@
 import { StreamChat } from "stream-chat";
 import cloudinary from "../config/cloudinary.js";
-import UserModel from "../models/User.js";
+import UserModel from "../src/models/User.js";
 
 const api_key = process.env.STREAM_API_KEY;
 const api_secret = process.env.STREAM_API_SECRET;
@@ -10,7 +10,7 @@ const client = StreamChat.getInstance(api_key, api_secret);
 const fetchUsers = async (req, res) => {
   try {
     const users = await UserModel.find({}).select(
-      "_id username email avatar createdAt"
+      "_id username email avatar createdAt",
     );
 
     if (!users || users.length === 0) {
@@ -56,7 +56,7 @@ const updateUser = async (req, res) => {
     const user = await UserModel.findByIdAndUpdate(
       { _id: id },
       { $set: updates },
-      { new: true }
+      { new: true },
     );
     if (!user) {
       return res
@@ -100,7 +100,7 @@ const changeAvatar = async (req, res) => {
     const user = await UserModel.findByIdAndUpdate(
       { _id: id },
       { $set: { avatar: imageUrl } },
-      { new: true }
+      { new: true },
     );
 
     await client.upsertUser({
@@ -130,7 +130,7 @@ const deleteAvatar = async (req, res) => {
     const user = await UserModel.findByIdAndUpdate(
       { _id: id },
       { $set: { avatar: null } },
-      { new: true }
+      { new: true },
     );
 
     if (!user) {
