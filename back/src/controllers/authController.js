@@ -1,26 +1,29 @@
 import UserModel from "../models/User.js";
-import { connectDB } from "../config/db.js";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+import { StreamChat } from "stream-chat";
+import bcrypt from "bcryptjs";
 
 dotenv.config();
 
+const api_key = process.env.STREAM_API_KEY;
+const api_secret = process.env.STREAM_API_SECRET;
+
 const generateTokens = (user) => {
   const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
+    expiresIn: "10d",
   });
 
   const refreshToken = jwt.sign(
     { userId: user._id },
     process.env.JWT_REFRESH_SECRET,
-    { expiresIn: "30m" },
+    { expiresIn: "10d" },
   );
 
   return { accessToken, refreshToken };
 };
 
 const Register = async (req, res) => {
-  await connectDB();
   try {
     const { email, username, password } = req.body;
     if (!email || !username || !password) {
@@ -39,6 +42,7 @@ const Register = async (req, res) => {
         .status(400)
         .json({ message: "User under this email already exists" });
     }
+
     const existingUsername = await UserModel.findOne({ username });
     if (existingUsername) {
       return res
@@ -49,8 +53,26 @@ const Register = async (req, res) => {
     //random avatar generation logic
     const avatar = `https://api.dicebear.com/7.x/avataaars/png?seed=${username}`;
 
-    const newUser = new UserModel({ ...req.body, avatar });
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const newUser = new UserModel({
+      avatar,
+      password: hashedPassword,
+      email: email,
+      username: username,
+    });
     await newUser.save();
+
+    const serverClient = StreamChat.getInstance(api_key, api_secret);
+
+    await serverClient.upsertUser({
+      id: newUser._id,
+      username,
+      email,
+      image: avatar,
+      role: "user",
+    });
 
     res.status(201).json({
       success: true,
@@ -69,7 +91,6 @@ const Register = async (req, res) => {
 };
 
 const Login = async (req, res) => {
-  await connectDB();
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -80,14 +101,19 @@ const Login = async (req, res) => {
       return res.status(400).json({ message: "Email address is invalid" });
     }
 
-    const isPasswordValid = await user.comparePassword(password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(400).json({ message: "Password is invalid" });
     }
 
     const { accessToken, refreshToken } = generateTokens(user);
+
     user.refreshToken = refreshToken; // store in DB to track invalidations
     await user.save();
+
+    const client = StreamChat.getInstance(api_key, api_secret);
+
+    const stream_token = client.createToken(user.id);
 
     res.status(200).json({
       success: true,
@@ -99,6 +125,7 @@ const Login = async (req, res) => {
         avatar: user.avatar,
         email: user.email,
         createdAt: user.createdAt,
+        stream_token: stream_token,
       },
     });
   } catch (error) {
@@ -110,17 +137,18 @@ const Login = async (req, res) => {
 const checkEmailExists = async (req, res) => {
   const { email } = req.query;
   const emailExists = await UserModel.findOne({ email });
+  if (!emailExists) return res.status(404).json({ success: false });
   res.json(emailExists);
 };
 
 const checkUserExists = async (req, res) => {
   const { username } = req.query;
   const usernameExists = await UserModel.findOne({ username });
+  if (!usernameExists) return res.status(404).json({ success: false });
   res.json(usernameExists);
 };
 
 const refreshMyToken = async (req, res) => {
-  await connectDB();
   const { refreshToken } = req.body;
   if (!refreshToken)
     return res
@@ -143,13 +171,13 @@ const refreshMyToken = async (req, res) => {
     const newAccessToken = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" },
+      { expiresIn: "10d" },
     );
 
     const newRefreshToken = jwt.sign(
       { userId: user._id },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "30m" },
+      { expiresIn: "10d" },
     );
 
     // Update stored refresh token
@@ -169,7 +197,36 @@ const refreshMyToken = async (req, res) => {
   }
 };
 
-const ChangePassword = async (req, res) => {};
+const ChangePassword = async (req, res) => {
+  const { resetToken, newPassword, email } = req.body;
+
+  try {
+    const decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
+
+    if (decoded.purpose !== "password_reset") {
+      return res.status(400).json({ error: "Invalid token" });
+    }
+
+    const hashPassword = await bcrypt.hash(newPassword, 12);
+
+    const user = await UserModel.findOneAndUpdate(
+      { email },
+      { $set: { password: hashPassword } },
+      { new: true },
+    );
+
+    if (!user) {
+      return res.status(400).json({ error: `User under ${email} not found` });
+    }
+
+    res
+      .status(200)
+      .json({ success: true, message: "Password changed successfully!" });
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
 
 export {
   Register,
