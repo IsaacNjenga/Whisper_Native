@@ -1,5 +1,5 @@
 import { StreamChat } from "stream-chat";
-import cloudinary from "../../config/cloudinary.js";
+import cloudinary from "../config/cloudinary.js";
 import UserModel from "../src/models/User.js";
 
 const api_key = process.env.STREAM_API_KEY;
