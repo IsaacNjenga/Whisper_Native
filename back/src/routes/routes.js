@@ -1,5 +1,4 @@
 import express from "express";
-import { Login, Register } from "../../controllers/authController.js";
 import {
   changeAvatar,
   deleteAvatar,
@@ -7,7 +6,8 @@ import {
   fetchUser,
   fetchUsers,
   updateUser,
-} from "../../controllers/userController.js";
+} from "../controllers/userController.js";
+import { Register, Login } from "../controllers/authController.js";
 
 const router = express.Router();
 
