@@ -34,11 +34,11 @@ export default function RegisterScreen() {
       />
 
       <Button mode="contained" onPress={() => {}} style={styles.button}>
-        Sign In
+        <Text>Sign In</Text>
       </Button>
 
       <Button onPress={() => router.push("/register")}>
-        Dont have an account? Register
+        <Text>Dont have an account? Register</Text>
       </Button>
     </View>
   );

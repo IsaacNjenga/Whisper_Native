@@ -38,7 +38,7 @@ export default function LoginScreen() {
     try {
       setLoading(true);
 
-      const res = await axios.post(`${API_URL}/sign-in`, { email, password });
+      const res = await axios.post(`${API_URL}/auth/sign-in`, { email, password });
 
       if (res.data.success) {
         await login(res.data.user, res.data.token, res.data.refreshToken);

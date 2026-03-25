@@ -48,7 +48,7 @@ export default function LandingScreen() {
             contentStyle={styles.buttonContent}
             labelStyle={styles.primaryLabel}
           >
-            Get Started
+            <Text>Get Started</Text>
           </Button>
 
           <Button
@@ -58,7 +58,7 @@ export default function LandingScreen() {
             contentStyle={styles.buttonContent}
             labelStyle={styles.secondaryLabel}
           >
-            I already have an account
+            <Text>I already have an account</Text>
           </Button>
 
           <Text style={styles.terms}>

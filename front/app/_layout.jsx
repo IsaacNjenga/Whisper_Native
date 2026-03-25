@@ -39,7 +39,7 @@ export default function RootLayout() {
               headerShadowVisible: false,
             }}
           />
-        </Stack>{" "}
+        </Stack>
       </PaperProvider>
     </AuthProvider>
   );
