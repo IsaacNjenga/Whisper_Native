@@ -17,30 +17,30 @@ const corsOptions = {
 };
 
 // Middleware
-// app.use(cors(corsOptions));
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// // Routes
-// app.use("/api", Router);
+// Routes
+app.use("/api", Router);
 
-async function startServer() {
-  try {
-    await connectDB();
-    app.use(cors(corsOptions));
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: true }));
+// async function startServer() {
+//   try {
+//     await connectDB();
+//     app.use(cors(corsOptions));
+//     app.use(express.json());
+//     app.use(express.urlencoded({ extended: true }));
 
-    app.use("/api", Router);
+//     app.use("/api", Router);
 
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
-}
+//     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+//   } catch (error) {
+//     console.error("Failed to start server:", error);
+//     process.exit(1);
+//   }
+// }
 
-startServer();
+// startServer();
 
 // Preflight
 app.use((req, res, next) => {
@@ -55,17 +55,17 @@ app.use((req, res, next) => {
 });
 
 // IMPORTANT: connect DB ONCE (serverless-safe)
-// let isConnected = false;
+let isConnected = false;
 
-// async function ensureDB() {
-//   if (!isConnected) {
-//     await connectDB();
-//     isConnected = true;
-//   }
-// }
+async function ensureDB() {
+  if (!isConnected) {
+    await connectDB();
+    isConnected = true;
+  }
+}
 
-// // ✅ Wrap handler for Vercel
-// export default async function handler(req, res) {
-//   await ensureDB();
-//   return app(req, res);
-// }
+// ✅ Wrap handler for Vercel
+export default async function handler(req, res) {
+  await ensureDB();
+  return app(req, res);
+}

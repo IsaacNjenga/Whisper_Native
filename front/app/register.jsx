@@ -41,7 +41,7 @@ export default function RegisterScreen() {
   }
 
   function validate() {
-    if (!form.name || !form.email || !form.password || !form.confirmPassword) {
+    if (!form.username || !form.email || !form.password || !form.confirmPassword) {
       setError("Please fill in all required fields.");
       return false;
     }
