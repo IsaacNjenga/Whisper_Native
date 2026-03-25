@@ -11,6 +11,8 @@ export const verifyOtp = async (req, res) => {
   const record = await OtpModel.findOne({ email: normalizedEmail });
   
   const isMatch = await bcrypt.compare(cleanOtp, record.otp);
+  console.log("match!", isMatch);
+  
   console.log(record);
 
   if (!record) {
@@ -28,7 +30,7 @@ export const verifyOtp = async (req, res) => {
 
 //   const isMatch = await bcrypt.compare(cleanOtp, record.otp);
 
-  console.log("match!", isMatch);
+//   console.log("match!", isMatch);
 
   if (!isMatch) {
     throw new Error("Invalid OTP");
