@@ -8,6 +8,11 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true, minLength: 8, select: false },
     avatar: { type: String, default: "" },
     refreshToken: { type: String, default: "", select: false },
+    authProvider: {
+      type: String,
+      enum: ["local", "firebase"],
+      default: "local",
+    },
   },
   { collection: "users", timestamps: true },
 );

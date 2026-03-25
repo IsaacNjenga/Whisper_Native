@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import { StreamChat } from "stream-chat";
 import bcrypt from "bcryptjs";
+import admin from "../config/firebaseAdmin.js";
 
 dotenv.config();
 
@@ -67,7 +68,7 @@ const Register = async (req, res) => {
     const serverClient = StreamChat.getInstance(api_key, api_secret);
 
     await serverClient.upsertUser({
-      id: newUser._id,
+      id: newUser._id.toString(),
       username,
       email,
       image: avatar,
@@ -97,8 +98,15 @@ const Login = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
     const user = await UserModel.findOne({ email }).select("+password");
+
     if (!user) {
       return res.status(400).json({ message: "Email address is invalid" });
+    }
+
+    if (user.authProvider !== "local") {
+      return res.status(400).json({
+        error: "Please login using Google",
+      });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -130,7 +138,9 @@ const Login = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in Login:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res
+      .status(500)
+      .json({ message: "Internal server error", message: error.message });
   }
 };
 
@@ -204,7 +214,9 @@ const ChangePassword = async (req, res) => {
     const decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
 
     if (decoded.purpose !== "password_reset") {
-      return res.status(400).json({ error: "Invalid token. Request for a new OTP" });
+      return res
+        .status(400)
+        .json({ error: "Invalid token. Request for a new OTP" });
     }
 
     const hashPassword = await bcrypt.hash(newPassword, 12);
@@ -219,12 +231,152 @@ const ChangePassword = async (req, res) => {
       return res.status(400).json({ error: `User under ${email} not found` });
     }
 
+    if (user.authProvider !== "local") {
+      return res.status(400).json({
+        error: "Password reset not available. Use Google login.",
+      });
+    }
+
     res
       .status(200)
       .json({ success: true, message: "Password changed successfully!" });
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ error: error.message });
+  }
+};
+
+const firebaseGoogleRegister = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        error: "Missing idToken. Cannot proceed",
+      });
+    }
+
+    // ✅ verify token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+    const { uid, email, name, picture, email_verified } = decodedToken;
+
+    if (!email_verified) {
+      return res.status(400).json({
+        error: "Email not verified",
+      });
+    }
+
+    const existingUser = await UserModel.findOne({ email });
+
+    if (existingUser) {
+      return res.status(400).json({
+        message: "User already exists",
+      });
+    }
+
+    const newUser = new UserModel({
+      avatar: picture,
+      email,
+      username: name,
+      firebaseUid: uid,
+    });
+
+    await newUser.save();
+
+    const serverClient = StreamChat.getInstance(api_key, api_secret);
+
+    await serverClient.upsertUser({
+      id: newUser._id.toString(), // ✅ FIX
+      name,
+      email,
+      image: picture,
+      role: "user",
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "User signed up successfully",
+    });
+  } catch (error) {
+    console.error("Error in firebase sign up:", error);
+
+    return res.status(500).json({
+      error: "Internal server error",
+      details: error.message,
+    });
+  }
+};
+const firebaseGoogleLogin = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        error: "Missing idToken",
+      });
+    }
+
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const { email, name, picture, uid } = decodedToken;
+
+    let user = await UserModel.findOne({ email });
+
+    if (user.authProvider !== "firebase") {
+      return res.status(400).json({
+        error: "Please login using email and password",
+      });
+    }
+
+    // ✅ Auto-create user if not exists (better UX)
+    if (!user) {
+      user = await UserModel.create({
+        email,
+        username: name,
+        avatar: picture,
+        firebaseUid: uid,
+      });
+
+      const serverClient = StreamChat.getInstance(api_key, api_secret);
+
+      await serverClient.upsertUser({
+        id: user._id.toString(),
+        name,
+        email,
+        image: picture,
+        role: "user",
+      });
+    }
+
+    const { accessToken, refreshToken } = generateTokens(user);
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    const client = StreamChat.getInstance(api_key, api_secret);
+
+    const stream_token = client.createToken(user._id.toString());
+
+    return res.status(200).json({
+      success: true,
+      token: accessToken,
+      refreshToken,
+      user: {
+        _id: user._id,
+        username: user.username,
+        avatar: user.avatar,
+        email: user.email,
+        createdAt: user.createdAt,
+        stream_token,
+      },
+    });
+  } catch (error) {
+    console.error("Error on firebase login:", error);
+
+    return res.status(500).json({
+      error: "Internal server error",
+      details: error.message,
+    });
   }
 };
 
@@ -235,4 +387,6 @@ export {
   refreshMyToken,
   checkEmailExists,
   checkUserExists,
+  firebaseGoogleLogin,
+  firebaseGoogleRegister,
 };
