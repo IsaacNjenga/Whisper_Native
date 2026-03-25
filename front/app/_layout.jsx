@@ -27,6 +27,7 @@ export default function RootLayout() {
               title: "",
               headerTransparent: true,
               headerShadowVisible: false,
+              headerTintColor: "#6C47FF",
             }}
           />
 
@@ -37,6 +38,7 @@ export default function RootLayout() {
               title: "",
               headerTransparent: true,
               headerShadowVisible: false,
+              headerTintColor: "#6C47FF",
             }}
           />
         </Stack>

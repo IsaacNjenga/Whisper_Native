@@ -14,14 +14,15 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "@/contexts/AuthContext";
-import { signInWithGoogle } from "@/providers/AuthProvider";
+import { useGoogleAuth } from "@/providers/AuthProvider";
 import axios from "axios";
 
 const API_URL = process.env.EXPO_PUBLIC_SERVER_URL;
 
-export default function LoginScreen() {
+export default function Login() {
   const router = useRouter();
   const { login } = useAuth();
+  const { promptAsync } = useGoogleAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,21 +31,27 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+
   async function handleGoogleSignIn() {
     setError("");
     try {
       setGoogleLoading(true);
-      const { user, idToken } = await signInWithGoogle();
-      console.log(user);
-      const res = await axios.post(`${API_URL}/auth/firebase-sign-in`, {
-        idToken,
-      });
+      const result = await promptAsync();
 
-      if (res.data.success) {
-        await login(res.data.user, res.data.token, res.data.refreshToken);
-        router.replace("/(tabs)/home");
-      } else {
-        setError(res.data.message || "Google sign-in failed.");
+      if (result?.type === "success") {
+        const { authentication } = result;
+
+        // 👉 THIS is what you send to backend
+        const res = await axios.post(`${API_URL}/auth/firebase-sign-in`, {
+          idToken: authentication.idToken,
+        });
+
+        if (res.data.success) {
+          await login(res.data.user, res.data.token, res.data.refreshToken);
+          router.replace("/(tabs)/home");
+        } else {
+          setError(res.data.message || "Google sign-in failed.");
+        }
       }
     } catch (error) {
       setError("Google sign-in failed. Please try again.");
@@ -65,10 +72,12 @@ export default function LoginScreen() {
     try {
       setLoading(true);
 
-      const res = await axios.post(`${API_URL}/auth/sign-in`, {
+      const res = await axios.post(`http://localhost:3001/auth/sign-in`, {
         email,
         password,
       });
+
+      console.log(res)
 
       if (res.data.success) {
         await login(res.data.user, res.data.token, res.data.refreshToken);

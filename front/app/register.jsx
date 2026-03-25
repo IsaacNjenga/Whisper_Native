@@ -16,13 +16,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
-import { signInWithGoogle } from "@/providers/AuthProvider";
+import { useGoogleAuth } from "@/providers/AuthProvider";
 
 const API_URL = process.env.EXPO_PUBLIC_SERVER_URL;
 
-export default function RegisterScreen() {
+export default function Register() {
   const router = useRouter();
   const { login } = useAuth();
+  const { promptAsync } = useGoogleAuth();
 
   const [form, setForm] = useState({
     username: "",
@@ -34,6 +35,7 @@ export default function RegisterScreen() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   function updateField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -41,7 +43,12 @@ export default function RegisterScreen() {
   }
 
   function validate() {
-    if (!form.username || !form.email || !form.password || !form.confirmPassword) {
+    if (
+      !form.username ||
+      !form.email ||
+      !form.password ||
+      !form.confirmPassword
+    ) {
       setError("Please fill in all required fields.");
       return false;
     }
@@ -61,21 +68,31 @@ export default function RegisterScreen() {
   }
 
   async function handleGoogleSignUp() {
+    setError("");
     try {
-      const { user, idToken } = await signInWithGoogle();
-      console.log(user);
-      const res = await axios.post(`${API_URL}/auth/firebase-sign-in`, {
-        idToken,
-      });
+      setGoogleLoading(true);
+      const result = await promptAsync();
 
-      if (res.data.success) {
-        await login(res.data.user, res.data.token, res.data.refreshToken);
-        router.replace("/(tabs)/home");
-      } else console.error(res.data.message);
+      if (result?.type === "success") {
+        const { authentication } = result;
+
+        // 👉 THIS is what you send to backend
+        const res = await axios.post(`${API_URL}/auth/firebase-sign-in`, {
+          idToken: authentication.idToken,
+        });
+
+        if (res.data.success) {
+          await login(res.data.user, res.data.token, res.data.refreshToken);
+          router.replace("/(tabs)/home");
+        } else {
+          setError(res.data.message || "Google sign-in failed.");
+        }
+      }
     } catch (error) {
+      setError("Google sign-in failed. Please try again.");
       console.error(error);
     } finally {
-      setLoading(false);
+      setGoogleLoading(false);
     }
   }
 
@@ -154,10 +171,13 @@ export default function RegisterScreen() {
               <TouchableOpacity
                 style={styles.googleButton}
                 onPress={handleGoogleSignUp}
+                disabled={googleLoading}
                 activeOpacity={0.8}
               >
                 <Text style={styles.googleIcon}>G</Text>
-                <Text style={styles.googleText}>Continue with Google</Text>
+                <Text style={styles.googleText}>
+                  {googleLoading ? "Signing in..." : "Continue with Google"}
+                </Text>
               </TouchableOpacity>
 
               {/* Divider */}
@@ -231,7 +251,7 @@ export default function RegisterScreen() {
                 mode="contained"
                 onPress={handleRegister}
                 loading={loading}
-                disabled={loading}
+                disabled={loading || googleLoading}
                 style={styles.registerButton}
                 contentStyle={styles.buttonContent}
                 labelStyle={styles.buttonLabel}
