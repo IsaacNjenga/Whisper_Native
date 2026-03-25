@@ -1,52 +1,426 @@
-import { View, StyleSheet } from "react-native";
-import { TextInput, Button, Text } from "react-native-paper";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ImageBackground,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Image,
+} from "react-native";
+import { TextInput, Button } from "react-native-paper";
 import { useState } from "react";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "@/contexts/AuthContext";
+import axios from "axios";
+
+const API_URL = process.env.EXPO_PUBLIC_SERVER_URL;
 
 export default function RegisterScreen() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const router = useRouter();
+  const { login } = useAuth();
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  function updateField(field, value) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setError("");
+  }
+
+  function validate() {
+    if (!form.name || !form.email || !form.password || !form.confirmPassword) {
+      setError("Please fill in all required fields.");
+      return false;
+    }
+    if (!/\S+@\S+\.\S+/.test(form.email)) {
+      setError("Please enter a valid email address.");
+      return false;
+    }
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return false;
+    }
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match.");
+      return false;
+    }
+    return true;
+  }
+
+  async function handleRegister() {
+    if (!validate()) return;
+
+    try {
+      setLoading(true);
+      const res = await axios.post(`${API_URL}/register`, {
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+      });
+
+      if (res.data.success) {
+        await login(res.data.user, res.data.token, res.data.refreshToken);
+        router.replace("/(tabs)/home");
+      } else {
+        setError(res.data.message || "Registration failed. Please try again.");
+      }
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setError("An account with this email already exists.");
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogleLogin() {
+    // wire up Google OAuth here e.g. expo-auth-session
+    console.log("Google login pressed");
+  }
 
   return (
-    <View style={styles.container}>
-      <Text variant="headlineMedium" style={styles.heading}>
-        Sign In
-      </Text>
-
-      <TextInput
-        label="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        mode="outlined"
-        style={styles.input}
+    <ImageBackground
+      source={require("../assets/images/signup.jpg")}
+      style={styles.bgImage}
+      resizeMode="cover"
+    >
+      {/* dark overlay */}
+      <LinearGradient
+        colors={["rgba(0,0,0,0.45)", "rgba(0,0,0,0.75)"]}
+        style={StyleSheet.absoluteFill}
       />
 
-      <TextInput
-        label="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        mode="outlined"
-        style={styles.input}
-      />
+      <SafeAreaView style={styles.safe}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={styles.logoContainer}>
+                <Image
+                  style={{ width: "100%", height: "100%" }}
+                  source={require("../assets/images/cat.png")}
+                />
+              </View>
+              <Text style={styles.title}>Create account</Text>
+              <Text style={styles.subtitle}>Sign up to get started today</Text>
+            </View>
 
-      <Button mode="contained" onPress={() => {}} style={styles.button}>
-        <Text>Sign In</Text>
-      </Button>
+            {/* Card */}
+            <View style={styles.card}>
+              {/* Error box */}
+              {error ? (
+                <View style={styles.errorBox}>
+                  <Text style={styles.errorText}>⚠ {error}</Text>
+                </View>
+              ) : null}
 
-      <Button onPress={() => router.push("/register")}>
-        <Text>Dont have an account? Register</Text>
-      </Button>
-    </View>
+              {/* Google button */}
+              <TouchableOpacity
+                style={styles.googleButton}
+                onPress={handleGoogleLogin}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.googleIcon}>G</Text>
+                <Text style={styles.googleText}>Continue with Google</Text>
+              </TouchableOpacity>
+
+              {/* Divider */}
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or register with email</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              {/* Form fields */}
+              <TextInput
+                label="Full name"
+                value={form.name}
+                onChangeText={(val) => updateField("name", val)}
+                autoCapitalize="words"
+                mode="outlined"
+                style={styles.input}
+                outlineStyle={styles.inputOutline}
+                theme={{ colors: { primary: "#6C47FF" } }}
+              />
+
+              <TextInput
+                label="Email address"
+                value={form.email}
+                onChangeText={(val) => updateField("email", val)}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                mode="outlined"
+                style={styles.input}
+                outlineStyle={styles.inputOutline}
+                theme={{ colors: { primary: "#6C47FF" } }}
+              />
+
+              <TextInput
+                label="Phone number (optional)"
+                value={form.phone}
+                onChangeText={(val) => updateField("phone", val)}
+                keyboardType="phone-pad"
+                mode="outlined"
+                style={styles.input}
+                outlineStyle={styles.inputOutline}
+                theme={{ colors: { primary: "#6C47FF" } }}
+              />
+
+              <TextInput
+                label="Password"
+                value={form.password}
+                onChangeText={(val) => updateField("password", val)}
+                secureTextEntry={!showPassword}
+                mode="outlined"
+                style={styles.input}
+                outlineStyle={styles.inputOutline}
+                theme={{ colors: { primary: "#6C47FF" } }}
+                right={
+                  <TextInput.Icon
+                    icon={showPassword ? "eye-off" : "eye"}
+                    onPress={() => setShowPassword(!showPassword)}
+                  />
+                }
+              />
+
+              <TextInput
+                label="Confirm password"
+                value={form.confirmPassword}
+                onChangeText={(val) => updateField("confirmPassword", val)}
+                secureTextEntry={!showConfirm}
+                mode="outlined"
+                style={styles.input}
+                outlineStyle={styles.inputOutline}
+                theme={{ colors: { primary: "#6C47FF" } }}
+                right={
+                  <TextInput.Icon
+                    icon={showConfirm ? "eye-off" : "eye"}
+                    onPress={() => setShowConfirm(!showConfirm)}
+                  />
+                }
+              />
+
+              {/* Submit */}
+              <Button
+                mode="contained"
+                onPress={handleRegister}
+                loading={loading}
+                disabled={loading}
+                style={styles.registerButton}
+                contentStyle={styles.buttonContent}
+                labelStyle={styles.buttonLabel}
+              >
+                <Text>
+                  {loading ? "Creating account..." : "Create Account"}
+                </Text>
+              </Button>
+
+              {/* Terms */}
+              <Text style={styles.terms}>
+                By registering you agree to our{" "}
+                <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
+                <Text style={styles.termsLink}>Privacy Policy</Text>
+              </Text>
+            </View>
+
+            {/* Footer */}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Already have an account? </Text>
+              <TouchableOpacity onPress={() => router.push("/login")}>
+                <Text style={styles.footerLink}>Sign in</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, justifyContent: "center" },
-  heading: { marginBottom: 24 },
-  input: { marginBottom: 16 },
-  button: { marginBottom: 12 },
+  bgImage: {
+    flex: 1,
+  },
+  safe: {
+    flex: 1,
+  },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    justifyContent: "center",
+  },
+
+  // Header
+  header: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  logoContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 18,
+    backgroundColor: "#6C47FF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  logoIcon: {
+    fontSize: 26,
+    color: "#ffffff",
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#ffffff",
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: "rgba(255,255,255,0.7)",
+  },
+
+  // Card
+  card: {
+    backgroundColor: "#ffffff",
+    borderRadius: 24,
+    padding: 24,
+    gap: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+
+  // Error
+  errorBox: {
+    backgroundColor: "#fef2f2",
+    borderWidth: 1,
+    borderColor: "#fecaca",
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  errorText: {
+    color: "#dc2626",
+    fontSize: 13,
+    lineHeight: 18,
+  },
+
+  // Google
+  googleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    borderWidth: 1.5,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    paddingVertical: 13,
+    backgroundColor: "#fafafa",
+  },
+  googleIcon: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#4285F4",
+  },
+  googleText: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#374151",
+  },
+
+  // Divider
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#e5e7eb",
+  },
+  dividerText: {
+    fontSize: 12,
+    color: "#9ca3af",
+  },
+
+  // Inputs
+  input: {
+    backgroundColor: "#ffffff",
+  },
+  inputOutline: {
+    borderRadius: 12,
+    borderColor: "#e5e7eb",
+  },
+
+  // Submit
+  registerButton: {
+    borderRadius: 14,
+    backgroundColor: "#6C47FF",
+    marginTop: 4,
+  },
+  buttonContent: {
+    height: 52,
+  },
+  buttonLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#ffffff",
+  },
+
+  // Terms
+  terms: {
+    fontSize: 12,
+    color: "#9ca3af",
+    textAlign: "center",
+    lineHeight: 18,
+  },
+  termsLink: {
+    color: "#6C47FF",
+    fontWeight: "500",
+  },
+
+  // Footer
+  footer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 20,
+    paddingBottom: 8,
+  },
+  footerText: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.8)",
+  },
+  footerLink: {
+    fontSize: 14,
+    color: "#ffffff",
+    fontWeight: "700",
+  },
 });

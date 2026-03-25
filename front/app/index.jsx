@@ -4,6 +4,7 @@ import {
   StyleSheet,
   ImageBackground,
   Dimensions,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -31,7 +32,10 @@ export default function LandingScreen() {
         {/* Hero */}
         <View style={styles.hero}>
           <View style={styles.logoContainer}>
-            <Text style={styles.logoIcon}>✦</Text>
+            <Image
+              style={{ width: "100%", height: "100%" }}
+              source={require("../assets/images/cat.png")}
+            />
           </View>
           <Text style={styles.title}>Welcome to Whisper</Text>
           <Text style={styles.subtitle}>
@@ -90,8 +94,8 @@ const styles = StyleSheet.create({
     paddingTop: height * 0.05,
   },
   logoContainer: {
-    width: 80,
-    height: 80,
+    width: 90,
+    height: 90,
     borderRadius: 24,
     backgroundColor: "#6C47FF",
     alignItems: "center",
