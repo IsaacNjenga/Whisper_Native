@@ -1,6 +1,8 @@
 import axios from "axios";
 import { createContext, useContext, useState, useEffect } from "react";
 import { storage } from "@/utils/storage";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/providers/FirebaseProvider";
 
 const AuthContext = createContext();
 
@@ -14,6 +16,22 @@ export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, initializeUser);
+    return unsubscribe;
+  }, []);
+
+  async function initializeUser(user) {
+    if (user) {
+      setUser({ ...user });
+      setIsAuthenticated(true);
+    } else {
+      setUser(null);
+      setIsAuthenticated(false);
+    }
+    setLoading(false);
+  }
 
   useEffect(() => {
     // SecureStore is async, unlike localStorage

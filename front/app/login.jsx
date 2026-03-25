@@ -92,7 +92,7 @@ export default function LoginScreen() {
 
   return (
     <ImageBackground
-      source={require("../assets/images/landing-bg.jpg")} // 👈 your bg image
+      source={require("../assets/images/signin.jpg")}
       style={styles.bgImage}
       resizeMode="cover"
     >
