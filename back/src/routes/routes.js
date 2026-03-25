@@ -13,6 +13,8 @@ import {
   checkEmailExists,
   refreshMyToken,
   ChangePassword,
+  firebaseGoogleLogin,
+  firebaseGoogleRegister,
 } from "../controllers/authController.js";
 import protectRoute from "../middleware/auth.middleware.js";
 import { otpRequest } from "../utils/requestOTP.js";
@@ -23,6 +25,8 @@ const router = express.Router();
 //auth routes
 router.post("/auth/sign-up", Register);
 router.post("/auth/sign-in", Login);
+router.post("/auth/firebase-sign-up", firebaseGoogleRegister);
+router.post("/auth/firebase-sign-in", firebaseGoogleLogin);
 router.post("/auth/email-check", checkEmailExists);
 router.post("/auth/user-check", checkUserExists);
 router.post("/auth/token-refresh", refreshMyToken);

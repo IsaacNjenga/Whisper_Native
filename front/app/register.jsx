@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
+import { signInWithGoogle } from "@/providers/AuthProvider";
 
 const API_URL = process.env.EXPO_PUBLIC_SERVER_URL;
 
@@ -24,9 +25,8 @@ export default function RegisterScreen() {
   const { login } = useAuth();
 
   const [form, setForm] = useState({
-    name: "",
+    username: "",
     email: "",
-    phone: "",
     password: "",
     confirmPassword: "",
   });
@@ -60,15 +60,33 @@ export default function RegisterScreen() {
     return true;
   }
 
+  async function handleGoogleSignUp() {
+    try {
+      const { user, idToken } = await signInWithGoogle();
+      console.log(user);
+      const res = await axios.post(`${API_URL}/auth/firebase-sign-in`, {
+        idToken,
+      });
+
+      if (res.data.success) {
+        await login(res.data.user, res.data.token, res.data.refreshToken);
+        router.replace("/(tabs)/home");
+      } else console.error(res.data.message);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleRegister() {
     if (!validate()) return;
 
     try {
       setLoading(true);
-      const res = await axios.post(`${API_URL}/register`, {
-        name: form.name,
+      const res = await axios.post(`${API_URL}/auth/sign-up`, {
+        username: form.username,
         email: form.email,
-        phone: form.phone,
         password: form.password,
       });
 
@@ -87,11 +105,6 @@ export default function RegisterScreen() {
     } finally {
       setLoading(false);
     }
-  }
-
-  async function handleGoogleLogin() {
-    // wire up Google OAuth here e.g. expo-auth-session
-    console.log("Google login pressed");
   }
 
   return (
@@ -140,7 +153,7 @@ export default function RegisterScreen() {
               {/* Google button */}
               <TouchableOpacity
                 style={styles.googleButton}
-                onPress={handleGoogleLogin}
+                onPress={handleGoogleSignUp}
                 activeOpacity={0.8}
               >
                 <Text style={styles.googleIcon}>G</Text>
@@ -157,8 +170,8 @@ export default function RegisterScreen() {
               {/* Form fields */}
               <TextInput
                 label="Full name"
-                value={form.name}
-                onChangeText={(val) => updateField("name", val)}
+                value={form.username}
+                onChangeText={(val) => updateField("username", val)}
                 autoCapitalize="words"
                 mode="outlined"
                 style={styles.input}
@@ -173,17 +186,6 @@ export default function RegisterScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
-                mode="outlined"
-                style={styles.input}
-                outlineStyle={styles.inputOutline}
-                theme={{ colors: { primary: "#6C47FF" } }}
-              />
-
-              <TextInput
-                label="Phone number (optional)"
-                value={form.phone}
-                onChangeText={(val) => updateField("phone", val)}
-                keyboardType="phone-pad"
                 mode="outlined"
                 style={styles.input}
                 outlineStyle={styles.inputOutline}
