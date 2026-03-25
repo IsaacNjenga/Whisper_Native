@@ -9,9 +9,7 @@ const client = StreamChat.getInstance(api_key, api_secret);
 
 const fetchUsers = async (req, res) => {
   try {
-    const users = await UserModel.find({}).select(
-      "_id username email avatar createdAt",
-    );
+    const users = await UserModel.find({});
 
     if (!users || users.length === 0) {
       return res
@@ -26,10 +24,13 @@ const fetchUsers = async (req, res) => {
 };
 
 const fetchUser = async (req, res) => {
-  const { id } = req.query;
+  const id = req.params.id;
+
   if (!id) return res.status(404).json({ message: "No ID specified" });
+
   try {
     const user = await UserModel.findById(id);
+
     if (!user) {
       return res
         .status(404)
@@ -44,11 +45,13 @@ const fetchUser = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
-  const { id } = req.query;
+  const id = req.params.id;
+  const { email, avatar, username } = req.body;
+
   if (!id) return res.status(404).json({ message: "No ID specified" });
-  const { email, avatar } = req.body;
 
   const updates = {};
+  if (username) updates.username = username;
   if (email) updates.email = email;
   if (avatar) updates.avatar = avatar;
 
@@ -64,18 +67,15 @@ const updateUser = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
-    const updatedUser = await client.upsertUser({
+    await client.upsertUser({
       id,
-      email: email || "noemail@example.com",
-      image: avatar || null,
+      username: username || user.username,
+      email: email || user.email,
+      image: avatar || user.avatar,
     });
+
     return res.status(200).json({
       success: true,
-      user: {
-        _id: updatedUser._id,
-        avatar: updatedUser.image,
-        email: updatedUser.email,
-      },
     });
   } catch (error) {
     console.log("Error on user update", error);
@@ -124,7 +124,7 @@ const changeAvatar = async (req, res) => {
 };
 
 const deleteAvatar = async (req, res) => {
-  const { id } = req.query;
+  const id = req.params.id;
   if (!id) return res.status(404).json({ message: "No ID specified" });
   try {
     const user = await UserModel.findByIdAndUpdate(
@@ -147,11 +147,6 @@ const deleteAvatar = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      user: {
-        _id: user._id,
-        avatar: user.avatar,
-        email: user.email,
-      },
     });
   } catch (error) {
     console.log("Error on avatar delete", error);
@@ -160,15 +155,41 @@ const deleteAvatar = async (req, res) => {
 };
 
 const deleteUser = async (req, res) => {
-  const { id } = req.query;
-  if (!id) return res.status(404).json({ message: "No ID specified" });
+  const userIdFromToken = req.user._id.toString();
+  const userIdFromParams = req.params.id;
+
+  if (!userIdFromToken || !userIdFromParams)
+    return res.status(404).json({ message: "No ID specified" });
+
+  if (userIdFromToken !== userIdFromParams) {
+    return res.status(403).json({
+      message: "You are not allowed to delete this user",
+    });
+  }
+
+  await UserModel.findByIdAndDelete(userIdFromParams);
+
   try {
-    await UserModel.findByIdAndDelete({ _id: id });
-    await client.deleteUser(id, {
+    const user = await UserModel.findByIdAndDelete({ _id: userIdFromParams });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const streamAcc = await client.deleteUser(userIdFromParams, {
       delete_conversation_channels: true,
       mark_messages_deleted: true,
       hard_delete: true,
     });
+
+    if (!streamAcc) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found on Stream" });
+    }
+
     return res
       .status(200)
       .json({ success: true, message: "Successfully deleted!" });

@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true, minLength: 8, select: false },
     avatar: { type: String, default: "" },
-    refreshToken: { type: String, default: "" },
+    refreshToken: { type: String, default: "", select: false },
   },
   { collection: "users", timestamps: true },
 );
@@ -18,7 +18,7 @@ userSchema.pre("save", async function () {
     return;
   }
   const salt = await bcrypt.genSalt(10);
-  this.password =  bcrypt.hash(this.password, salt);
+  this.password = bcrypt.hash(this.password, salt);
 });
 
 //compare password
