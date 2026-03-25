@@ -204,7 +204,7 @@ const ChangePassword = async (req, res) => {
     const decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
 
     if (decoded.purpose !== "password_reset") {
-      return res.status(400).json({ error: "Invalid token" });
+      return res.status(400).json({ error: "Invalid token. Request for a new OTP" });
     }
 
     const hashPassword = await bcrypt.hash(newPassword, 12);
