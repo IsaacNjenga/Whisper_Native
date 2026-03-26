@@ -4,14 +4,11 @@ import jwt from "jsonwebtoken";
 import { StreamChat } from "stream-chat";
 import bcrypt from "bcryptjs";
 import admin from "../config/firebaseAdmin.js";
-import axios from "axios";
 
 dotenv.config();
 
 const api_key = process.env.STREAM_API_KEY;
 const api_secret = process.env.STREAM_API_SECRET;
-const client_id = process.env.GOOGLE_CLIENT_ID;
-const client_secret = process.env.GOOGLE_CLIENT_SECRET;
 
 const generateTokens = (user) => {
   const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
@@ -281,7 +278,8 @@ const firebaseGoogleRegister = async (req, res) => {
     const newUser = new UserModel({
       avatar: picture,
       email,
-      username: name,
+      username: name || email.split("@")[0],
+      authProvider: "firebase",
       firebaseUid: uid,
     });
 
@@ -312,43 +310,43 @@ const firebaseGoogleRegister = async (req, res) => {
 };
 const firebaseGoogleLogin = async (req, res) => {
   try {
-    const { code } = req.body;
+    const idToken = req.body.idToken || req.body.id_token;
 
-    const tokenRes = await axios.post("https://oauth2.googleapis.com/token", {
-      client_id: client_id,
-      client_secret: client_secret,
-      code,
-      grant_type: "authorization_code",
-      redirect_uri: "com.isaacn.whisper:/oauthredirect",
-    });
-
-    console.log(tokenRes);
-
-    const { id_token } = tokenRes.data;
-
-    if (!id_token) {
+    if (!idToken) {
       return res.status(400).json({
         error: "Missing idToken",
       });
     }
 
-    const decodedToken = await admin.auth().verifyIdToken(id_token);
-    const { email, name, picture, uid } = decodedToken;
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const { email, email_verified, name, picture, uid } = decodedToken;
+
+    if (!email) {
+      return res.status(400).json({
+        error: "Missing email on Google account",
+      });
+    }
+
+    if (email_verified === false) {
+      return res.status(400).json({
+        error: "Email not verified",
+      });
+    }
 
     let user = await UserModel.findOne({ email });
 
-    if (user.authProvider !== "firebase") {
+    if (user && user.authProvider !== "firebase") {
       return res.status(400).json({
         error: "Please login using email and password",
       });
     }
 
-    // ✅ Auto-create user if not exists (better UX)
     if (!user) {
       user = await UserModel.create({
         email,
-        username: name,
-        avatar: picture,
+        username: name || email.split("@")[0],
+        avatar: picture || "",
+        authProvider: "firebase",
         firebaseUid: uid,
       });
 
@@ -361,6 +359,9 @@ const firebaseGoogleLogin = async (req, res) => {
         image: picture,
         role: "user",
       });
+    } else if (!user.firebaseUid && uid) {
+      user.firebaseUid = uid;
+      await user.save();
     }
 
     const { accessToken, refreshToken } = generateTokens(user);

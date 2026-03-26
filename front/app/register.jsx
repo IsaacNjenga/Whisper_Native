@@ -17,13 +17,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 import { useGoogleAuth } from "@/providers/AuthProvider";
+import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+import { auth } from "@/providers/FirebaseProvider";
 
 const API_URL = process.env.EXPO_PUBLIC_SERVER_URL;
 
 export default function Register() {
   const router = useRouter();
   const { login } = useAuth();
-  const { promptAsync } = useGoogleAuth();
+  const { request, promptAsync } = useGoogleAuth();
 
   const [form, setForm] = useState({
     username: "",
@@ -69,28 +71,50 @@ export default function Register() {
 
   async function handleGoogleSignUp() {
     setError("");
+
+    if (!request) {
+      setError("Google sign-in is still loading. Please try again in a moment.");
+      return;
+    }
+
     try {
       setGoogleLoading(true);
       const result = await promptAsync();
 
-      if (result?.type === "success") {
-        const { authentication } = result;
-
-        // 👉 THIS is what you send to backend
-        const res = await axios.post(`${API_URL}/auth/firebase-sign-in`, {
-          idToken: authentication.idToken,
-        });
-
-        if (res.data.success) {
-          await login(res.data.user, res.data.token, res.data.refreshToken);
-          router.replace("/(tabs)/home");
-        } else {
-          setError(res.data.message || "Google sign-in failed.");
+      if (result?.type !== "success") {
+        if (result?.type === "error") {
+          setError("Google sign-in failed. Please try again.");
         }
+        return;
       }
-    } catch (error) {
-      setError("Google sign-in failed. Please try again.");
-      console.error(error);
+
+      const idToken = result.params?.id_token || result.authentication?.idToken;
+
+      if (!idToken) {
+        throw new Error("No ID token returned from Google");
+      }
+
+      const credential = GoogleAuthProvider.credential(idToken);
+      const userCredential = await signInWithCredential(auth, credential);
+      const firebaseIdToken = await userCredential.user.getIdToken();
+
+      const res = await axios.post(`${API_URL}/auth/firebase-sign-in`, {
+        idToken: firebaseIdToken,
+      });
+
+      if (res.data.success) {
+        await login(res.data.user, res.data.token, res.data.refreshToken);
+        router.replace("/(tabs)/home");
+      } else {
+        setError(res.data.message || "Google sign-in failed.");
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Google sign-in failed. Please try again.",
+      );
+      console.error(err);
     } finally {
       setGoogleLoading(false);
     }
@@ -171,7 +195,7 @@ export default function Register() {
               <TouchableOpacity
                 style={styles.googleButton}
                 onPress={handleGoogleSignUp}
-                disabled={googleLoading}
+                disabled={googleLoading || !request}
                 activeOpacity={0.8}
               >
                 <Text style={styles.googleIcon}>G</Text>

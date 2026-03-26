@@ -5,8 +5,16 @@ const userSchema = new mongoose.Schema(
   {
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true, minLength: 8, select: false },
+    password: {
+      type: String,
+      required() {
+        return this.authProvider === "local";
+      },
+      minLength: 8,
+      select: false,
+    },
     avatar: { type: String, default: "" },
+    firebaseUid: { type: String, unique: true, sparse: true },
     refreshToken: { type: String, default: "", select: false },
     authProvider: {
       type: String,
@@ -19,11 +27,16 @@ const userSchema = new mongoose.Schema(
 
 //hashing password before saving user
 userSchema.pre("save", async function () {
-  if (!this.isModified("password")) {
+  if (this.authProvider !== "local" || !this.isModified("password") || !this.password) {
     return;
   }
+
+  if (/^\$2[aby]\$/.test(this.password)) {
+    return;
+  }
+
   const salt = await bcrypt.genSalt(10);
-  this.password = bcrypt.hash(this.password, salt);
+  this.password = await bcrypt.hash(this.password, salt);
 });
 
 //compare password

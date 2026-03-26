@@ -18,6 +18,8 @@ import { useGoogleAuth } from "@/providers/AuthProvider";
 import axios from "axios";
 import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
 import { auth } from "@/providers/FirebaseProvider";
+import Modal from "@/components/ui-components/Modal";
+import ChangePassword from "@/components/ui-components/changePassword";
 
 const API_URL = process.env.EXPO_PUBLIC_SERVER_URL;
 
@@ -26,6 +28,10 @@ export default function Login() {
   const { login } = useAuth();
   const { request, promptAsync } = useGoogleAuth();
 
+  const [forgotVisible, setForgotVisible] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  // const [resetSent, setResetSent] = useState(false);
+  // const [resetError, setResetError] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -35,48 +41,58 @@ export default function Login() {
 
   async function handleGoogleSignIn() {
     setError("");
+
+    if (!request) {
+      setError(
+        "Google sign-in is still loading. Please try again in a moment.",
+      );
+      return;
+    }
+
     try {
       setGoogleLoading(true);
+
       const result = await promptAsync();
 
-      console.log(request);
-
-      console.log(result);
-
-      if (!request) {
-        console.log("Request not ready yet");
+      if (result?.type !== "success") {
+        if (result?.type === "error") {
+          setError("Google sign-in failed. Please try again.");
+        }
         return;
       }
 
-      if (result?.type !== "success") {
-        throw new Error("Google auth cancelled");
+      const idToken = result.params?.id_token || result.authentication?.idToken;
+
+      console.log(result);
+
+      if (!idToken) {
+        throw new Error("No ID token returned from Google");
       }
 
-      // const { idToken } = result.authentication;
-      const { code } = result.params;
-      console.log(code);
+      const credential = GoogleAuthProvider.credential(idToken);
+      const userCredential = await signInWithCredential(auth, credential);
+      const firebaseIdToken = await userCredential.user.getIdToken();
+      const res = await axios.post(`${API_URL}/auth/firebase-sign-in`, {
+        idToken: firebaseIdToken,
+      });
 
-      if (result?.type === "success") {
-        const res = await axios.post(`${API_URL}/auth/firebase-sign-in`, {
-          code: code,
-        });
-
-        if (res.data.success) {
-          await login(res.data.user, res.data.token, res.data.refreshToken);
-          router.replace("/(tabs)/home");
-        } else {
-          setError(res.data.message || "Google sign-in failed.");
-        }
+      if (res.data.success) {
+        await login(res.data.user, res.data.token, res.data.refreshToken);
+        router.replace("/(tabs)/home");
+      } else {
+        setError(res.data.message || "Google sign-in failed.");
       }
-    } catch (error) {
-      setError("Google sign-in failed. Please try again.");
-      console.error(error);
-      console.error(error.details);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Google sign-in failed. Please try again.",
+      );
+      console.error(err);
     } finally {
       setGoogleLoading(false);
     }
   }
-
   async function handleLogin() {
     setError("");
 
@@ -113,6 +129,14 @@ export default function Login() {
     }
   }
 
+  function closeForgotModal() {
+    setForgotVisible(false);
+    // reset internal state after modal animates out
+    setTimeout(() => {
+      setResetEmail("");
+    }, 300);
+  }
+
   return (
     <ImageBackground
       source={require("../assets/images/signin.jpg")}
@@ -124,7 +148,6 @@ export default function Login() {
         colors={["rgba(0,0,0,0.45)", "rgba(0,0,0,0.75)"]}
         style={StyleSheet.absoluteFill}
       />
-
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
@@ -157,7 +180,7 @@ export default function Login() {
               <TouchableOpacity
                 style={styles.googleButton}
                 onPress={handleGoogleSignIn}
-                disabled={googleLoading}
+                disabled={googleLoading || !request}
                 activeOpacity={0.8}
               >
                 <Text style={styles.googleIcon}>G</Text>
@@ -210,7 +233,10 @@ export default function Login() {
                 }
               />
 
-              <TouchableOpacity style={styles.forgotWrap}>
+              <TouchableOpacity
+                style={styles.forgotWrap}
+                onPress={() => setForgotVisible(true)}
+              >
                 <Text style={styles.forgotText}>Forgot password?</Text>
               </TouchableOpacity>
 
@@ -247,6 +273,18 @@ export default function Login() {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
+      
+      <Modal
+        visible={forgotVisible}
+        closeModal={closeForgotModal}
+        component={
+          <ChangePassword
+            closeForgotModal={closeForgotModal}
+            resetEmail={resetEmail}
+            setResetEmail={setResetEmail}
+          />
+        }
+      />
     </ImageBackground>
   );
 }
