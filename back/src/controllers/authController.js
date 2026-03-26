@@ -9,6 +9,8 @@ dotenv.config();
 
 const api_key = process.env.STREAM_API_KEY;
 const api_secret = process.env.STREAM_API_SECRET;
+const client_id = process.env.GOOGLE_CLIENT_ID;
+const client_secret = process.env.GOOGLE_CLIENT_SECRET;
 
 const generateTokens = (user) => {
   const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
@@ -297,7 +299,6 @@ const firebaseGoogleRegister = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "User signed up successfully",
-      
     });
   } catch (error) {
     console.error("Error in firebase sign up:", error);
@@ -310,15 +311,27 @@ const firebaseGoogleRegister = async (req, res) => {
 };
 const firebaseGoogleLogin = async (req, res) => {
   try {
-    const { idToken } = req.body;
+    const { code } = req.body;
 
-    if (!idToken) {
+    const tokenRes = await axios.post("https://oauth2.googleapis.com/token", {
+      client_id: client_id,
+      client_secret: client_secret,
+      code,
+      grant_type: "authorization_code",
+      redirect_uri: "com.isaacn.whisper:/oauthredirect",
+    });
+
+    console.log(tokenRes);
+
+    const { id_token } = tokenRes.data;
+
+    if (!id_token) {
       return res.status(400).json({
         error: "Missing idToken",
       });
     }
 
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const decodedToken = await admin.auth().verifyIdToken(id_token);
     const { email, name, picture, uid } = decodedToken;
 
     let user = await UserModel.findOne({ email });

@@ -34,9 +34,10 @@
           "image": "./assets/images/aby.jpg",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#E6F4FE",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#1A1A1A",
+            "image": "./assets/images/aby.jpg"
           }
         }
       ],
@@ -46,6 +47,11 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1b6f6426-baef-4b24-9fa5-d5aeb499ab80"
+      }
     }
   }
 }

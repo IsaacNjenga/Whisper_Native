@@ -16,13 +16,15 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGoogleAuth } from "@/providers/AuthProvider";
 import axios from "axios";
+import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+import { auth } from "@/providers/FirebaseProvider";
 
 const API_URL = process.env.EXPO_PUBLIC_SERVER_URL;
 
 export default function Login() {
   const router = useRouter();
   const { login } = useAuth();
-  const { promptAsync } = useGoogleAuth();
+  const { request, promptAsync } = useGoogleAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,19 +33,32 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-
   async function handleGoogleSignIn() {
     setError("");
     try {
       setGoogleLoading(true);
       const result = await promptAsync();
 
-      if (result?.type === "success") {
-        const { authentication } = result;
+      console.log(request);
 
-        // 👉 THIS is what you send to backend
+      console.log(result);
+
+      if (!request) {
+        console.log("Request not ready yet");
+        return;
+      }
+
+      if (result?.type !== "success") {
+        throw new Error("Google auth cancelled");
+      }
+
+      // const { idToken } = result.authentication;
+      const { code } = result.params;
+      console.log(code);
+
+      if (result?.type === "success") {
         const res = await axios.post(`${API_URL}/auth/firebase-sign-in`, {
-          idToken: authentication.idToken,
+          code: code,
         });
 
         if (res.data.success) {
@@ -56,6 +71,7 @@ export default function Login() {
     } catch (error) {
       setError("Google sign-in failed. Please try again.");
       console.error(error);
+      console.error(error.details);
     } finally {
       setGoogleLoading(false);
     }
@@ -72,12 +88,10 @@ export default function Login() {
     try {
       setLoading(true);
 
-      const res = await axios.post(`http://localhost:3001/auth/sign-in`, {
+      const res = await axios.post(`${API_URL}/auth/sign-in`, {
         email,
         password,
       });
-
-      console.log(res)
 
       if (res.data.success) {
         await login(res.data.user, res.data.token, res.data.refreshToken);
