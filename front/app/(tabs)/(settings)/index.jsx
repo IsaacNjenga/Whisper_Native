@@ -4,10 +4,8 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Switch,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar } from "react-native-paper";
@@ -15,10 +13,6 @@ import { Avatar } from "react-native-paper";
 export default function Settings() {
   const { user, logout } = useAuth();
   const router = useRouter();
-
-  const [notifications, setNotifications] = useState(true);
-  const [emailUpdates, setEmailUpdates] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
 
   async function handleLogout() {
     await logout();
@@ -56,33 +50,17 @@ export default function Settings() {
         {/* ── Account ── */}
         <SectionLabel title="Account" />
         <View style={styles.group}>
-          <RowLink label="Edit profile" icon="👤" onPress={() => {}} />
+          <RowLink
+            label="Edit profile"
+            icon="👤"
+            onPress={() => router.push("/(tabs)/(settings)/profile")}
+          />
           <Divider />
           <RowLink label="Change password" icon="🔑" onPress={() => {}} />
-          <Divider />
-          <RowLink label="Linked accounts" icon="🔗" onPress={() => {}} />
-        </View>
-
-        {/* ── Notifications ── */}
-        <SectionLabel title="Notifications" />
-        <View style={styles.group}>
-          <RowToggle
-            label="Push notifications"
-            icon="🔔"
-            value={notifications}
-            onToggle={() => setNotifications(!notifications)}
-          />
-          <Divider />
-          <RowToggle
-            label="Email updates"
-            icon="📧"
-            value={emailUpdates}
-            onToggle={() => setEmailUpdates(!emailUpdates)}
-          />
         </View>
 
         {/* ── Appearance ── */}
-        <SectionLabel title="Appearance" />
+        {/* <SectionLabel title="Appearance" />
         <View style={styles.group}>
           <RowToggle
             label="Dark mode"
@@ -90,19 +68,7 @@ export default function Settings() {
             value={darkMode}
             onToggle={() => setDarkMode(!darkMode)}
           />
-        </View>
-
-        {/* ── Support ── */}
-        <SectionLabel title="Help & support" />
-        <View style={styles.group}>
-          <RowLink label="Help center" icon="❓" onPress={() => {}} />
-          <Divider />
-          <RowLink label="Send feedback" icon="💬" onPress={() => {}} />
-          <Divider />
-          <RowLink label="Privacy policy" icon="🛡️" onPress={() => {}} />
-          <Divider />
-          <RowLink label="Terms of service" icon="📄" onPress={() => {}} />
-        </View>
+        </View> */}
 
         {/* ── Danger zone ── */}
         <SectionLabel title="Danger zone" />
@@ -150,22 +116,22 @@ function RowLink({ label, icon, onPress, danger = false }) {
   );
 }
 
-function RowToggle({ label, icon, value, onToggle }) {
-  return (
-    <View style={styles.row}>
-      <View style={styles.rowLeft}>
-        <Text style={styles.rowIcon}>{icon}</Text>
-        <Text style={styles.rowLabel}>{label}</Text>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onToggle}
-        trackColor={{ false: "#e5e7eb", true: "#c4b5fd" }}
-        thumbColor={value ? "#6C47FF" : "#ffffff"}
-      />
-    </View>
-  );
-}
+// function RowToggle({ label, icon, value, onToggle }) {
+//   return (
+//     <View style={styles.row}>
+//       <View style={styles.rowLeft}>
+//         <Text style={styles.rowIcon}>{icon}</Text>
+//         <Text style={styles.rowLabel}>{label}</Text>
+//       </View>
+//       <Switch
+//         value={value}
+//         onValueChange={onToggle}
+//         trackColor={{ false: "#e5e7eb", true: "#c4b5fd" }}
+//         thumbColor={value ? "#6C47FF" : "#ffffff"}
+//       />
+//     </View>
+//   );
+// }
 
 const styles = StyleSheet.create({
   safe: {
