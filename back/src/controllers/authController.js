@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { StreamChat } from "stream-chat";
 import bcrypt from "bcryptjs";
 import admin from "../config/firebaseAdmin.js";
+import axios from "axios";
 
 dotenv.config();
 
