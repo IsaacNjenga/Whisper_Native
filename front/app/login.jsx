@@ -123,7 +123,7 @@ export default function Login() {
       } else {
         setError("Something went wrong. Please try again.");
       }
-      console.error(err);
+      console.error("Error!:",err);
     } finally {
       setLoading(false);
     }
